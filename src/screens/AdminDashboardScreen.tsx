@@ -130,70 +130,28 @@ export default function AdminDashboardScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* Premium Dark Header */}
-      <LinearGradient
-        colors={[colors.navy, colors.navyLight]}
-        style={styles.header}
-      >
+      {/* Warehouse Admin Header */}
+      <View style={styles.header}>
         <SafeAreaView edges={['top']}>
-          {/* Row 1: App Identity & Auth */}
           <View style={styles.headerTop}>
-            <View style={styles.headerLeft}>
-              <View style={styles.logoBadge}>
-                <Ionicons name="flash" size={14} color={colors.white} />
-              </View>
-              <Text style={styles.headerTitle} numberOfLines={1}>Fulfillment Center</Text>
-            </View>
-            <Pressable 
-              style={styles.signOutBtn} 
-              onPress={() => {
-                handleSignOut();
-              }}
-            >
-              <Ionicons name="log-out-outline" size={14} color={colors.navy} />
+            <Text style={styles.headerTitle}>Warehouse Admin</Text>
+            <Pressable style={styles.signOutBtn} onPress={handleSignOut}>
               <Text style={styles.signOutText}>Sign Out</Text>
             </Pressable>
           </View>
 
-          {/* Row 2: Live Analytics Tiles */}
-          <View style={styles.analyticsRow}>
-            <View style={styles.statTile}>
-              <Text style={styles.statValue}>{adminRequests.length}</Text>
-              <Text style={styles.statLabel}>Total</Text>
-            </View>
-            <View style={[styles.statTile, styles.statTileActive]}>
-              <Text style={[styles.statValue, { color: colors.primary }]}>{pendingCount}</Text>
-              <Text style={styles.statLabel}>Pending</Text>
-            </View>
-            <View style={styles.statTile}>
-              <Text style={[styles.statValue, { color: colors.green }]}>{ackCount}</Text>
-              <Text style={styles.statLabel}>In Transit</Text>
-            </View>
-          </View>
-
-          {/* Row 3: Main Actions */}
           <View style={styles.headerActions}>
-            <Pressable 
-              style={styles.addItemBtn} 
-              onPress={() => {
-                setShowUserModal(true);
-              }}
-            >
-              <Ionicons name="people" size={16} color={colors.white} />
+            <Pressable style={styles.addItemBtn} onPress={() => setShowUserModal(true)}>
+              <Ionicons name="people" size={18} color={colors.white} />
               <Text style={styles.addItemText}>Manage Users</Text>
             </Pressable>
-            <Pressable 
-              style={styles.addItemBtn} 
-              onPress={() => {
-                openAddSheet();
-              }}
-            >
-              <Ionicons name="cube" size={16} color={colors.white} />
-              <Text style={styles.addItemText}>Stock Control</Text>
+            <Pressable style={styles.addItemBtn} onPress={openAddSheet}>
+              <Ionicons name="cube" size={18} color={colors.white} />
+              <Text style={styles.addItemText}>Extra stock</Text>
             </Pressable>
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {/* Request List */}
       <ScrollView
@@ -369,100 +327,52 @@ export default function AdminDashboardScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  logoBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 15,
   },
   headerTitle: {
-    fontSize: typography.h3,
+    fontSize: 24,
     fontWeight: typography.bold,
     color: colors.white,
-  },
-  analyticsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginVertical: 16,
-  },
-  statTile: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-  },
-  statTileActive: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  statValue: {
-    fontSize: typography.h2,
-    fontWeight: typography.extrabold,
-    color: colors.white,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: typography.bold,
-    color: 'rgba(255,255,255,0.5)',
-    textTransform: 'uppercase',
-    marginTop: 2,
   },
   headerActions: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 8,
+    marginTop: 5,
   },
   addItemBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    height: 44,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    height: 48,
     borderRadius: 12,
     gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   addItemText: {
     color: colors.white,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: typography.bold,
   },
   signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
     borderRadius: 10,
-    gap: 4,
   },
   signOutText: {
-    color: colors.navy,
-    fontSize: 12,
+    color: colors.white,
+    fontSize: 13,
     fontWeight: typography.bold,
   },
   body: { flex: 1 },

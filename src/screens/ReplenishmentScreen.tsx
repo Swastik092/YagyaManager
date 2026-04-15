@@ -66,36 +66,27 @@ export default function ReplenishmentScreen({ navigation }: Props) {
   }, []);
 
   return (
-  return (
     <View style={styles.container}>
-      {/* Premium Navy Header */}
-      <LinearGradient
-        colors={[colors.navy, colors.navyLight]}
-        style={styles.header}
-      >
+      {/* Orange Header Container */}
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <SafeAreaView edges={['top']}>
           <View style={styles.headerRow}>
             <Pressable 
               style={styles.backBtn} 
-              onPress={() => {
-                navigation.goBack();
-              }}
+              onPress={() => navigation.goBack()}
             >
-              <Ionicons name="apps-outline" size={20} color={colors.white} />
+              <Ionicons name="apps-outline" size={24} color={colors.white} />
             </Pressable>
             <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>Distributor Portal</Text>
+              <Text style={styles.headerTitle}>Replenishment</Text>
               {currentRow && (
-                <View style={styles.activeRowIndicator}>
-                  <View style={styles.pulseDot} />
-                  <Text style={styles.headerRow2}>Row {currentRow} • Live</Text>
-                </View>
+                <Text style={styles.headerRowLabel}>Current Row: {currentRow}</Text>
               )}
             </View>
-            <View style={{ width: 40 }} />
+            <View style={{ width: 44 }} />
           </View>
         </SafeAreaView>
-      </LinearGradient>
+      </View>
 
       {/* Body */}
       <ScrollView 
@@ -104,14 +95,9 @@ export default function ReplenishmentScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <SurfaceCard style={styles.mainCard}>
-          <Animated.View style={[styles.iconWrap, { transform: [{ scale: iconScale }] }]}>
-            <LinearGradient
-              colors={[colors.primarySubtle, 'rgba(255,107,0,0.02)']}
-              style={styles.iconCircle}
-            >
-              <Ionicons name="cube" size={48} color={colors.primary} />
-            </LinearGradient>
-          </Animated.View>
+          <View style={styles.iconCircle}>
+            <Ionicons name="cube" size={54} color={colors.primary} />
+          </View>
 
           <Animated.Text
             style={[styles.mainTitle, { opacity: contentOpacity, transform: [{ translateY: contentY }] }]}
@@ -139,14 +125,8 @@ export default function ReplenishmentScreen({ navigation }: Props) {
           </Animated.View>
         </SurfaceCard>
 
-        {/* Recent Requests Section */}
-        <Animated.View style={[styles.requestsSection, { opacity: contentOpacity }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.requestsTitle}>Row {currentRow} History</Text>
-            <View style={styles.historyBadge}>
-              <Text style={styles.historyBadgeText}>LIVE</Text>
-            </View>
-          </View>
+        <View style={styles.requestsSection}>
+          <Text style={styles.requestsTitle}>Recent Requests (Row {currentRow})</Text>
           
           {adminRequests.filter(r => r.row === currentRow).length === 0 ? (
             <SurfaceCard style={styles.emptyRequestsCard}>
@@ -161,10 +141,7 @@ export default function ReplenishmentScreen({ navigation }: Props) {
                 <SurfaceCard key={req.id} style={styles.requestItem} innerStyle={styles.requestItemInner}>
                   <View style={styles.requestInfo}>
                     <Text style={styles.requestItems} numberOfLines={1}>{req.items}</Text>
-                    <View style={styles.timeRow}>
-                      <Ionicons name="time-outline" size={12} color={colors.greyText} />
-                      <Text style={styles.requestTime}>{req.time}</Text>
-                    </View>
+                    <Text style={styles.requestTime}>{req.time}</Text>
                   </View>
                   <View style={[
                     styles.statusBadge,
@@ -183,7 +160,7 @@ export default function ReplenishmentScreen({ navigation }: Props) {
                 </SurfaceCard>
               ))
           )}
-        </Animated.View>
+        </View>
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -196,81 +173,59 @@ export default function ReplenishmentScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    paddingBottom: 24,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 15,
     justifyContent: 'space-between',
   },
-  activeRowIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(26, 185, 129, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginTop: 6,
-    gap: 6,
-  },
-  pulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.green,
-  },
-  headerRow2: {
-    fontSize: 11,
-    color: colors.green,
+  headerRowLabel: {
+    fontSize: 12,
+    color: colors.white,
+    opacity: 0.8,
+    marginTop: 2,
     fontWeight: typography.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   backBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   headerCenter: { alignItems: 'center' },
   headerTitle: {
-    fontSize: typography.h3,
+    fontSize: 24,
     fontWeight: typography.bold,
     color: colors.white,
-    letterSpacing: -0.5,
   },
   body: {
     flex: 1,
   },
   bodyContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   mainCard: {
     alignItems: 'center',
-    padding: 32,
-    marginBottom: 32,
-  },
-  iconWrap: {
-    marginBottom: 20,
+    padding: 30,
+    marginBottom: 25,
   },
   iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#FFF5EE',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.primarySubtle,
+    marginBottom: 20,
   },
   mainTitle: {
     fontSize: typography.h2,
@@ -279,11 +234,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subText: {
-    fontSize: typography.body,
+    fontSize: 15,
     color: colors.greyText,
     textAlign: 'center',
     lineHeight: 22,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   btnWrap: {
     width: '100%',
@@ -291,103 +246,74 @@ const styles = StyleSheet.create({
   },
   requestBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 16,
+    borderRadius: 15,
     height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    gap: 10,
   },
   requestBtnText: {
     color: colors.white,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: typography.bold,
   },
   requestsSection: {
     width: '100%',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 4,
-  },
   requestsTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: typography.bold,
-    color: colors.navy,
-  },
-  historyBadge: {
-    backgroundColor: colors.navySubtle,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  historyBadgeText: {
-    fontSize: 10,
-    fontWeight: typography.extrabold,
-    color: colors.navy,
+    color: colors.greyText,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   emptyRequestsCard: {
     alignItems: 'center',
-    paddingVertical: 40,
-    gap: 12,
+    paddingVertical: 30,
   },
   emptyRequests: {
     fontSize: 14,
     color: colors.greyText,
-    fontWeight: typography.medium,
   },
   requestItem: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   requestItemInner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 15,
   },
   requestInfo: {
     flex: 1,
-    marginRight: 16,
   },
   requestItems: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: typography.bold,
     color: colors.navy,
-    marginBottom: 4,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
   },
   requestTime: {
     fontSize: 12,
     color: colors.greyText,
+    marginTop: 2,
   },
   statusBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    minWidth: 70,
+    paddingVertical: 4,
+    borderRadius: 6,
+    minWidth: 60,
     alignItems: 'center',
   },
-  pendingBadge: { backgroundColor: colors.surfaceAlt },
-  ackBadge: { backgroundColor: colors.navySubtle },
-  dispatchBadge: { backgroundColor: colors.greenSubtle },
+  pendingBadge: { backgroundColor: '#F0F0F0' },
+  ackBadge: { backgroundColor: '#E8E8FF' },
+  dispatchBadge: { backgroundColor: '#E8FBF0' },
   statusText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.bold,
-    textTransform: 'uppercase',
   },
-  pendingText: { color: colors.greyText },
+  pendingText: { color: '#666' },
   ackText: { color: colors.navy },
   dispatchText: { color: colors.green },
 });

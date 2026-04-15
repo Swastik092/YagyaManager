@@ -16,7 +16,6 @@ import SurfaceCard from '../components/SurfaceCard';
 import { auth, db } from '../utils/firebase';
 import { 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
   signInAnonymously 
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -79,14 +78,7 @@ export default function LoginScreen({ navigation }: Props) {
           navigation.replace(isAdmin ? 'AdminDashboard' : 'ParticipantDashboard');
         } catch (signInError: any) {
           if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-            try {
-              const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-              setUser(userCredential.user);
-              showToastMsg('Account created and logged in!');
-              navigation.replace(isAdmin ? 'AdminDashboard' : 'ParticipantDashboard');
-            } catch (createError: any) {
-              throw signInError;
-            }
+            showToastMsg('Invalid email or password. Please contact the administrator.');
           } else {
             throw signInError;
           }
@@ -149,7 +141,7 @@ export default function LoginScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[colors.navy, colors.navyLight]}
+        colors={[colors.primary, colors.primaryDark]}
         style={styles.headerBackground}
       >
         <SafeAreaView style={styles.headerInner}>
@@ -300,15 +292,15 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: typography.h1,
-    fontWeight: typography.extrabold,
+    fontWeight: typography.bold,
     color: colors.white,
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
   welcomeText: {
     fontSize: typography.subtitle,
-    color: 'rgba(255,255,255,0.8)',
-    fontWeight: typography.medium,
-    marginTop: 2,
+    color: colors.white,
+    opacity: 0.9,
+    marginTop: 4,
   },
   loginBox: {
     marginHorizontal: 24,
@@ -339,12 +331,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
     paddingHorizontal: 16,
     height: 56,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#EFEFEF',
   },
   inputIcon: {
     marginRight: 12,

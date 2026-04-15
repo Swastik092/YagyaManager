@@ -36,50 +36,37 @@ export default function AdminRequestCard({ request, index }: Props) {
 
   return (
     <SurfaceCard style={[styles.card, { borderLeftColor: isPending ? colors.primary : colors.green }]}>
-      {/* Header */}
       <View style={styles.cardHeader}>
         <View>
           <Text style={styles.rowNum}>ROW {request.row}</Text>
-          <View style={styles.timeRow}>
-            <Ionicons name="time-outline" size={12} color={colors.greyText} />
-            <Text style={styles.time}>{request.time}</Text>
-          </View>
+          <Text style={styles.time}>{request.time}</Text>
         </View>
-        {!isPending && (
-          <View style={[
-            styles.statusBadge, 
-            isAck ? styles.ackBadge : styles.dispatchedBadge
+        <View style={[
+          styles.statusBadge, 
+          isPending ? styles.pendingBadge : (isAck ? styles.ackBadge : styles.dispatchedBadge)
+        ]}>
+          <Text style={[
+            styles.statusText, 
+            isPending ? styles.pendingText : (isAck ? styles.ackText : styles.dispatchedText)
           ]}>
-            <Text style={[
-              styles.statusText, 
-              isAck ? styles.ackText : styles.dispatchedText
-            ]}>
-              {isAck ? 'Acknowledged' : 'Dispatched'}
-            </Text>
-          </View>
-        )}
+            {request.status.toUpperCase()}
+          </Text>
+        </View>
       </View>
 
-      {/* Items Box */}
-      <View style={styles.itemsBox}>
-        <Text style={styles.itemsLabel}>Requested Inventory:</Text>
+      <View style={styles.itemsContainer}>
+        <Text style={styles.itemsLabel}>Requested Items:</Text>
         <Text style={styles.itemsText}>{request.items}</Text>
       </View>
 
-      {/* Action Buttons */}
       {(isPending || isAck) && (
-        <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+        <Animated.View style={{ transform: [{ scale: btnScale }], marginTop: 12 }}>
           <Pressable 
             style={[styles.actionBtn, isAck ? styles.dispatchBtn : styles.ackBtn]} 
             onPress={isAck ? handleDispatch : handleACK}
           >
-            <Ionicons 
-              name={isAck ? "send" : "checkmark-done"} 
-              size={18} 
-              color={colors.white} 
-            />
             <Text style={styles.actionBtnText}>
-              {isAck ? "Dispatch Items" : "Acknowledge"}
+              {isAck ? "Dispatch stock" : "Acknowledge"}
             </Text>
           </Pressable>
         </Animated.View>
@@ -90,93 +77,65 @@ export default function AdminRequestCard({ request, index }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderLeftWidth: 4,
-    marginBottom: 16,
+    borderLeftWidth: 5,
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   rowNum: {
-    fontSize: typography.h3,
+    fontSize: typography.h2,
     fontWeight: typography.bold,
     color: colors.navy,
-    letterSpacing: -0.5,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
   },
   time: {
     fontSize: 12,
     color: colors.greyText,
+    marginTop: 2,
   },
   statusBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  ackBadge: {
-    backgroundColor: colors.navySubtle,
-  },
-  dispatchedBadge: {
-    backgroundColor: colors.greenSubtle,
-  },
+  pendingBadge: { backgroundColor: '#F0F0F0' },
+  ackBadge: { backgroundColor: '#E8E8FF' },
+  dispatchedBadge: { backgroundColor: '#E8FBF0' },
   statusText: {
-    fontSize: 11,
-    fontWeight: typography.extrabold,
-    textTransform: 'uppercase',
+    fontSize: 10,
+    fontWeight: typography.bold,
   },
-  ackText: {
-    color: colors.navy,
-  },
-  dispatchedText: {
-    color: colors.green,
-  },
-  itemsBox: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+  pendingText: { color: '#666' },
+  ackText: { color: colors.navy },
+  dispatchedText: { color: colors.green },
+  itemsContainer: {
+    marginTop: 4,
   },
   itemsLabel: {
     fontSize: 11,
-    fontWeight: typography.bold,
     color: colors.greyText,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 6,
+    fontWeight: typography.bold,
+    marginBottom: 2,
   },
   itemsText: {
     fontSize: 16,
-    fontWeight: typography.bold,
     color: colors.navy,
-    lineHeight: 22,
+    fontWeight: typography.medium,
   },
   actionBtn: {
-    borderRadius: 14,
-    height: 54,
-    flexDirection: 'row',
+    borderRadius: 12,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
   },
   ackBtn: {
     backgroundColor: colors.navy,
   },
   dispatchBtn: {
     backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
   },
   actionBtnText: {
     color: colors.white,

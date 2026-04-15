@@ -1,28 +1,16 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { colors } from '../theme/colors';
 
 interface Props {
   children: React.ReactNode;
   style?: ViewStyle | ViewStyle[];
   innerStyle?: ViewStyle | ViewStyle[];
-  glass?: boolean;
-  intensity?: number;
 }
 
-export default function SurfaceCard({ children, style, innerStyle, glass = false, intensity = 40 }: Props) {
-  if (glass && Platform.OS === 'ios') {
-    return (
-      <View style={[styles.container, styles.glassContainer, style]}>
-        <BlurView intensity={intensity} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[styles.inner, innerStyle]}>{children}</View>
-      </View>
-    );
-  }
-
+export default function SurfaceCard({ children, style, innerStyle }: Props) {
   return (
-    <View style={[styles.container, styles.card, style]}>
+    <View style={[styles.container, style]}>
       <View style={[styles.inner, innerStyle]}>{children}</View>
     </View>
   );
@@ -30,23 +18,19 @@ export default function SurfaceCard({ children, style, innerStyle, glass = false
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  glassContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   inner: {
     padding: 16,

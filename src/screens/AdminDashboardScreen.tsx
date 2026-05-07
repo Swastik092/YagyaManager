@@ -38,6 +38,8 @@ export default function AdminDashboardScreen({ navigation }: Props) {
   // Custom Delete Modal State
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [phoneToDelete, setPhoneToDelete] = useState('');
+  
+  const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
 
   // Sync authorized numbers from Firestore
   useEffect(() => {
@@ -66,7 +68,9 @@ export default function AdminDashboardScreen({ navigation }: Props) {
     const cleanPhone = digitsOnly.slice(-10);
     const fullPhone = `+91${cleanPhone}`;
     
-    await addAuthorizedDistributor(fullPhone, newRow || '01');
+    const formattedRow = String(newRow || '1').padStart(2, '0');
+    
+    await addAuthorizedDistributor(fullPhone, formattedRow);
     setNewPhone('');
     setNewRow('');
     setIsAdding(false);
@@ -95,8 +99,10 @@ export default function AdminDashboardScreen({ navigation }: Props) {
         const cleanPhone = digitsOnly.slice(-10);
         const fullPhone = `+91${cleanPhone}`;
         
+        const formattedRow = String(newRow || '1').padStart(2, '0');
+        
         setIsAdding(true);
-        await addAuthorizedDistributor(fullPhone, newRow || '01');
+        await addAuthorizedDistributor(fullPhone, formattedRow);
         setIsAdding(false);
         setNewRow('');
       }
@@ -124,8 +130,7 @@ export default function AdminDashboardScreen({ navigation }: Props) {
   const ackCount = adminRequests.filter(isAcknowledged).length;
 
   const handleSignOut = () => {
-    signOut();
-    navigation.replace('Login');
+    setSignOutModalVisible(true);
   };
 
   return (
@@ -320,6 +325,22 @@ export default function AdminDashboardScreen({ navigation }: Props) {
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteModalVisible(false)}
       />
+
+      <ConfirmationModal
+        visible={isSignOutModalVisible}
+        title="Confirm Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="warning"
+        iconName="log-out-outline"
+        onConfirm={() => {
+          setSignOutModalVisible(false);
+          signOut();
+          navigation.replace('Login');
+        }}
+        onCancel={() => setSignOutModalVisible(false)}
+      />
     </View>
   );
 }
@@ -446,9 +467,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.greyLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addSection: {
-    marginBottom: 32,
   },
   sectionLabel: {
     fontSize: 12,
@@ -668,3 +686,4 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+

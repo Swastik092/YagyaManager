@@ -71,7 +71,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   authorizedPhoneNumbers: [],
 
   items: [...CORE_ITEMS],
-  adminRequests: [...INITIAL_REQUESTS],
+  adminRequests: [],
 
   showWarehouseSheet: false,
   requestItems: [],

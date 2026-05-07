@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View, Text, Pressable, ScrollView,
-  StyleSheet, Animated,
+  StyleSheet, Animated, Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import Toast from '../components/Toast';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { Ionicons } from '@expo/vector-icons';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'SelectRow'>;
@@ -21,6 +22,7 @@ const TOTAL_ROWS = 15;
 
 export default function SelectRowScreen({ navigation }: Props) {
   const { setCurrentRow, signOut, showToastMsg } = useAppStore();
+  const [isSignOutModalVisible, setSignOutModalVisible] = useState(false);
 
   const scaleValues = useRef(
     Array.from({ length: TOTAL_ROWS }, () => new Animated.Value(1))
@@ -57,8 +59,7 @@ export default function SelectRowScreen({ navigation }: Props) {
   };
 
   const handleSignOut = () => {
-    signOut();
-    navigation.replace('Login');
+    setSignOutModalVisible(true);
   };
 
   return (
@@ -114,6 +115,21 @@ export default function SelectRowScreen({ navigation }: Props) {
       </ScrollView>
 
       <Toast />
+      <ConfirmationModal
+        visible={isSignOutModalVisible}
+        title="Confirm Sign Out"
+        message="Are you sure you want to sign out?"
+        confirmText="Sign Out"
+        cancelText="Cancel"
+        type="warning"
+        iconName="log-out-outline"
+        onConfirm={() => {
+          setSignOutModalVisible(false);
+          signOut();
+          navigation.replace('Login');
+        }}
+        onCancel={() => setSignOutModalVisible(false)}
+      />
     </View>
   );
 }

@@ -7,18 +7,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../App';
+import Constants from 'expo-constants';
 import { useAppStore } from '../store/useAppStore';
 import RoleToggle from '../components/RoleToggle';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { Ionicons } from '@expo/vector-icons';
-import SurfaceCard from '../components/SurfaceCard';
+import CustomAlert from '../components/CustomAlert';
 import { auth, db } from '../utils/firebase';
+import { registerForPushNotifications, saveDistributorToken } from '../utils/notifications';
 import { 
   signInWithEmailAndPassword, 
   signInAnonymously 
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
@@ -35,6 +37,12 @@ export default function LoginScreen({ navigation }: Props) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    buttons: [] as any[],
+  });
 
   
 
@@ -74,11 +82,50 @@ export default function LoginScreen({ navigation }: Props) {
         
         try {
           const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+          
+          // Verify role to ensure separation of Admin and Participant
+          const userDocRef = doc(db, 'users', userCredential.user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          let actualRole = 'admin'; // Legacy users assume admin if no doc exists
+          if (userDocSnap.exists()) {
+            actualRole = userDocSnap.data().role;
+          }
+
+          if (isAdmin && actualRole !== 'admin') {
+            setAlertConfig({
+              visible: true,
+              title: "Access Denied",
+              message: "You are not an admin.",
+              buttons: [{ text: "OK" }]
+            });
+            auth.signOut();
+            setIsLoading(false);
+            return;
+          }
+
+          if (isParticipant && actualRole === 'admin') {
+            setAlertConfig({
+              visible: true,
+              title: "Access Denied",
+              message: "Please use Admin login.",
+              buttons: [{ text: "OK" }]
+            });
+            auth.signOut();
+            setIsLoading(false);
+            return;
+          }
+
           setUser(userCredential.user);
-          navigation.replace(isAdmin ? 'AdminDashboard' : 'ParticipantDashboard');
+          navigation.replace(isAdmin ? 'AdminDashboard' : 'SeatSelection');
         } catch (signInError: any) {
           if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
-            showToastMsg('Invalid email or password. Please contact the administrator.');
+            setAlertConfig({
+              visible: true,
+              title: "Login Failed",
+              message: "Invalid email or password. Please check your credentials.",
+              buttons: [{ text: "Try Again" }]
+            });
           } else {
             throw signInError;
           }
@@ -91,8 +138,6 @@ export default function LoginScreen({ navigation }: Props) {
         const cleanPhone = digitsOnly.slice(-10);
         const fullPhone = `+91${cleanPhone}`;
         
-
-
         if (cleanPhone.length < 10) {
           showToastMsg('Please enter a valid 10-digit number');
           setIsLoading(false);
@@ -104,15 +149,15 @@ export default function LoginScreen({ navigation }: Props) {
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-          Alert.alert(
-            "Access Denied",
-            "This phone number is not authorized. Please check the number or contact your Admin to get access.",
-            [{ text: "Try Again" }]
-          );
+          setAlertConfig({
+            visible: true,
+            title: "Access Denied",
+            message: "This phone number is not authorized. Please check the number or contact your Admin to get access.",
+            buttons: [{ text: "Try Again" }]
+          });
           setIsLoading(false);
           return;
         }
-
 
         // 3. Auto-Login & Route
         const assignedRow = docSnap.data()?.assignedRow || '01';
@@ -120,8 +165,20 @@ export default function LoginScreen({ navigation }: Props) {
         const userCredential = await signInAnonymously(auth);
         setUser(userCredential.user);
         
-        // Auto-set the assigned row and go direct
+        // Auto-set the assigned row
         setCurrentRow(assignedRow);
+
+        const isExpoGo =
+          Constants.appOwnership === 'expo' ||
+          Constants.executionEnvironment === 'storeClient';
+        // Register push token only outside Expo Go (SDK 53+ limitation).
+        if (!isExpoGo) {
+          const pushToken = await registerForPushNotifications();
+          if (pushToken) {
+            await saveDistributorToken(assignedRow, pushToken);
+          }
+        }
+
         showToastMsg(`Welcome back! Managing Row ${assignedRow}`);
         navigation.replace('Replenishment');
       } 
@@ -132,126 +189,159 @@ export default function LoginScreen({ navigation }: Props) {
     }
   };
 
-
-
   const canSignIn = (isAdmin || isParticipant) 
     ? (email.includes('@') && password.length > 5) 
     : (isDistributor ? phone.replace(/\D/g, '').length >= 10 : true);
 
   return (
     <View style={styles.container}>
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
       <LinearGradient
-        colors={[colors.primary, colors.primaryDark]}
-        style={styles.headerBackground}
-      >
-        <SafeAreaView style={styles.headerInner}>
-          <Animated.View style={[styles.fireContainer, { transform: [{ scale: pulseScale }] }]}>
-            <Text style={styles.fireEmoji}>🔥</Text>
-          </Animated.View>
-          <Text style={styles.appName}>Yagya Manager</Text>
-          <Text style={styles.welcomeText}>Professional Inventory System</Text>
-        </SafeAreaView>
-      </LinearGradient>
-
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        colors={[colors.primaryLight, colors.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
         >
-          <SurfaceCard style={styles.loginBox}>
-            <Text style={styles.cardTitle}>Sign In</Text>
-            <Text style={styles.cardSubtitle}>Choose your role to continue</Text>
-
-            <RoleToggle activeRole={activeRole} onSelect={(r) => { 
-              setRole(r); 
-              setPhone(''); 
-              setEmail('');
-              setPassword(''); 
-            }} />
-
-            {isDistributor ? (
-              <View style={styles.inputGroup}>
-                <Text style={styles.fieldLabel}>Mobile Number</Text>
-                <View style={styles.inputContainer}>
-                  <Ionicons name="call-outline" size={18} color={colors.greyText} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="10-digit mobile number"
-                    placeholderTextColor={colors.greyText}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    value={phone}
-                    onChangeText={setPhone}
-                  />
-                  {phone.length === 10 && (
-                    <Ionicons name="checkmark-circle" size={18} color={colors.green} />
-                  )}
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            automaticallyAdjustKeyboardInsets={true}
+          >
+            {/* Header Section */}
+            <View style={styles.header}>
+              <Animated.View style={[styles.iconContainer, { transform: [{ scale: pulseScale }] }]}>
+                <View style={styles.iconBackground}>
+                  <Ionicons name="flame" size={38} color={colors.primary} />
                 </View>
+              </Animated.View>
+              <Text style={styles.appName}>Yagya Manager</Text>
+              <Text style={styles.welcomeText}>Professional Inventory System</Text>
+            </View>
+
+            {/* Form Section */}
+            <View style={styles.formCard}>
+              <View style={styles.formHeader}>
+                <Text style={styles.cardTitle}>Sign In</Text>
+                <Text style={styles.cardSubtitle}>Choose your role to continue</Text>
               </View>
-            ) : (
-              <View style={styles.inputGroup}>
-                <Text style={styles.fieldLabel}>Account Details</Text>
-                <View style={styles.inputContainer}>
-                  <Ionicons name="mail-outline" size={18} color={colors.greyText} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email address"
-                    placeholderTextColor={colors.greyText}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                </View>
 
-                <View style={[styles.inputContainer, { marginTop: 12 }]}>
-                  <Ionicons name="lock-closed-outline" size={18} color={colors.greyText} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Account password"
-                    placeholderTextColor={colors.greyText}
-                    secureTextEntry={!showPassword}
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                  <Pressable onPress={() => setShowPassword(!showPassword)} style={{ padding: 4 }}>
-                    <Ionicons 
-                      name={showPassword ? "eye" : "eye-off"} 
-                      size={18} 
-                      color={colors.greyText} 
+              <RoleToggle 
+                activeRole={activeRole} 
+                onSelect={(r) => { 
+                  setRole(r); 
+                  setPhone(''); 
+                  setEmail('');
+                  setPassword(''); 
+                }} 
+              />
+
+              {isDistributor ? (
+                <View style={styles.inputGroup}>
+                  <View style={[styles.inputContainer, phone && phone.length > 0 && styles.inputContainerActive]}>
+                    <Ionicons name="call-outline" size={20} color={colors.greyText} style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Mobile Number"
+                      placeholderTextColor="#A0ABC0"
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                      value={phone}
+                      onChangeText={setPhone}
                     />
-                  </Pressable>
+                    {phone.length === 10 && (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.green} />
+                    )}
+                  </View>
                 </View>
-                <Pressable onPress={() => {}}>
-                  <Text style={styles.forgotPassword}>Forgot Password?</Text>
-                </Pressable>
-              </View>
-            )}
-
-            <Pressable
-              style={[styles.signInBtn, (!canSignIn || isLoading) && styles.signInBtnDisabled]}
-              onPress={handleSignIn}
-              disabled={!canSignIn || isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.signInBtnText}>Sign In</Text>
-              )}
-            </Pressable>
+                <View style={styles.inputGroup}>
+                  <View style={[styles.inputContainer, email && email.length > 0 && styles.inputContainerActive]}>
+                    <Ionicons name="mail-outline" size={20} color={colors.greyText} style={styles.inputIcon} />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Email Address"
+                      placeholderTextColor="#A0ABC0"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={setEmail}
+                    />
+                  </View>
 
-            <Text style={styles.footer}>
-              Don't have an account?{' '}
-              <Text style={styles.footerLink}>Contact Admin</Text>
-            </Text>
-          </SurfaceCard>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                  <View style={{ marginTop: 20 }}>
+                    <View style={[styles.inputContainer, password && password.length > 0 && styles.inputContainerActive]}>
+                      <Ionicons name="lock-closed-outline" size={20} color={colors.greyText} style={styles.inputIcon} />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor="#A0ABC0"
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onChangeText={setPassword}
+                      />
+                      <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                        <Ionicons 
+                          name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                          size={20} 
+                          color={colors.greyText} 
+                        />
+                      </Pressable>
+                    </View>
+                    <Pressable onPress={() => {}} style={{ alignSelf: 'flex-end', paddingVertical: 8 }}>
+                      <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.signInBtn, 
+                  (!canSignIn || isLoading) && styles.signInBtnDisabled,
+                  pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+                ]}
+                onPress={handleSignIn}
+                disabled={!canSignIn || isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.signInBtnText}>Sign In</Text>
+                )}
+              </Pressable>
+            </View>
+
+            {/* Footer Area */}
+            <View style={styles.footerContainer}>
+              {isParticipant ? (
+                <Text style={styles.footer}>
+                  Don't have an account?{' '}
+                  <Text style={styles.footerLink} onPress={() => navigation.navigate('Register')}>Register</Text>
+                </Text>
+              ) : (
+                <Text style={styles.footer}>
+                  Don't have an account?{' '}
+                  <Text style={styles.footerLink}>Contact Admin</Text>
+                </Text>
+              )}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 }
@@ -261,114 +351,116 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  headerBackground: {
-    height: 280,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerInner: {
-    alignItems: 'center',
-  },
   scrollContent: {
     flexGrow: 1,
-    marginTop: -40,
-    paddingBottom: 40,
+    padding: 24,
+    justifyContent: 'center',
   },
-  fireContainer: {
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconContainer: {
+    marginBottom: 20,
+  },
+  iconBackground: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    marginBottom: 12,
-  },
-  fireEmoji: {
-    fontSize: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   appName: {
-    fontSize: typography.h1,
-    fontWeight: typography.bold,
-    color: colors.white,
+    fontSize: 28,
+    fontWeight: typography.extrabold,
+    color: '#FFF',
     letterSpacing: -0.5,
   },
   welcomeText: {
-    fontSize: typography.subtitle,
-    color: colors.white,
-    opacity: 0.9,
-    marginTop: 4,
+    fontSize: typography.body,
+    color: '#FFEEDD',
+    marginTop: 6,
   },
-  loginBox: {
-    marginHorizontal: 24,
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 24,
-    gap: 20,
+    paddingTop: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  formHeader: {
+    marginBottom: 24,
   },
   cardTitle: {
     fontSize: typography.h2,
     fontWeight: typography.bold,
     color: colors.navy,
+    marginBottom: 6,
   },
   cardSubtitle: {
     fontSize: typography.body,
     color: colors.greyText,
-    marginTop: -16,
   },
   inputGroup: {
-    gap: 12,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: typography.bold,
-    color: colors.greyText,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginLeft: 4,
+    marginTop: 28,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
     paddingHorizontal: 16,
-    height: 56,
+    height: 58,
     borderWidth: 1,
-    borderColor: '#EFEFEF',
+    borderColor: '#E2E8F0',
+  },
+  inputContainerActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#FFF5F0',
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   input: {
     flex: 1,
     fontSize: 16,
     color: colors.navy,
-    fontWeight: typography.semibold,
+    fontWeight: typography.medium,
+    height: '100%',
+  },
+  eyeIcon: {
+    padding: 8,
   },
   forgotPassword: {
-    textAlign: 'right',
     fontSize: typography.small,
     color: colors.primary,
-    fontWeight: typography.semibold,
-    marginTop: 4,
+    fontWeight: typography.bold,
   },
   signInBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 30,
-    height: 60,
+    borderRadius: 16,
+    height: 58,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: colors.primary,
+    marginTop: 36,
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowRadius: 10,
+    elevation: 6,
   },
   signInBtnDisabled: {
-    backgroundColor: colors.border,
+    backgroundColor: '#E2E8F0',
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -376,15 +468,17 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: typography.h4,
     fontWeight: typography.bold,
-    letterSpacing: 0.5,
+  },
+  footerContainer: {
+    marginTop: 28,
+    alignItems: 'center',
   },
   footer: {
-    textAlign: 'center',
-    fontSize: typography.small,
-    color: colors.greyText,
+    fontSize: typography.body,
+    color: '#FFEEDD',     
   },
   footerLink: {
-    color: colors.primary,
+    color: '#FFFFFF',
     fontWeight: typography.bold,
   },
 });

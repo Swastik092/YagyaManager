@@ -11,6 +11,9 @@ import SelectRowScreen from './src/screens/SelectRowScreen';
 import ReplenishmentScreen from './src/screens/ReplenishmentScreen';
 import AdminDashboardScreen from './src/screens/AdminDashboardScreen';
 import ParticipantDashboard from './src/screens/ParticipantDashboard';
+import RegisterScreen from './src/screens/RegisterScreen';
+import SeatSelectionScreen from './src/screens/SeatSelectionScreen';
+import ItemRequestScreen from './src/screens/ItemRequestScreen';
 import { auth } from './src/utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useAppStore } from './src/store/useAppStore';
@@ -22,6 +25,9 @@ export type RootStackParamList = {
   Replenishment: undefined;
   AdminDashboard: undefined;
   ParticipantDashboard: undefined;
+  Register: undefined;
+  SeatSelection: undefined;
+  ItemRequest: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +63,9 @@ export default function App() {
           <Stack.Screen name="Replenishment" component={ReplenishmentScreen} />
           <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
           <Stack.Screen name="ParticipantDashboard" component={ParticipantDashboard} />
+          <Stack.Screen name="Register" component={RegisterScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen name="SeatSelection" component={SeatSelectionScreen} />
+          <Stack.Screen name="ItemRequest" component={ItemRequestScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

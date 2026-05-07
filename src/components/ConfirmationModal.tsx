@@ -16,13 +16,14 @@ interface ConfirmationModalProps {
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
-  type?: 'danger' | 'info';
+  type?: 'danger' | 'info' | 'warning';
+  iconName?: React.ComponentProps<typeof Ionicons>['name'];
 }
 
 export default function ConfirmationModal({ 
   visible, title, message, 
   confirmText = 'Delete', cancelText = 'Cancel', 
-  onConfirm, onCancel, type = 'danger' 
+  onConfirm, onCancel, type = 'danger', iconName
 }: ConfirmationModalProps) {
   const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
@@ -50,7 +51,27 @@ export default function ConfirmationModal({
 
   if (!visible) return null;
 
+  if (!visible) return null;
+
   const isDanger = type === 'danger';
+  const isWarning = type === 'warning';
+
+  let defaultIcon: React.ComponentProps<typeof Ionicons>['name'] = 'information-circle';
+  let iconColor = colors.navy;
+  let bgColor = 'rgba(26, 26, 46, 0.1)';
+  let confirmBgColor = colors.primary;
+
+  if (isDanger) {
+    defaultIcon = 'trash';
+    iconColor = colors.red;
+    bgColor = 'rgba(231, 76, 60, 0.1)';
+    confirmBgColor = colors.red;
+  } else if (isWarning) {
+    defaultIcon = 'warning';
+    iconColor = colors.primary;
+    bgColor = 'rgba(255, 107, 0, 0.1)';
+    confirmBgColor = colors.primary;
+  }
 
   return (
     <Modal transparent visible={visible} animationType="none">
@@ -63,12 +84,12 @@ export default function ConfirmationModal({
         ]}>
           <View style={[
             styles.iconBox, 
-            { backgroundColor: isDanger ? 'rgba(231, 76, 60, 0.1)' : 'rgba(26, 26, 46, 0.1)' }
+            { backgroundColor: bgColor }
           ]}>
             <Ionicons 
-              name={isDanger ? "trash" : "information-circle"} 
+              name={iconName || defaultIcon} 
               size={32} 
-              color={isDanger ? colors.red : colors.navy} 
+              color={iconColor} 
             />
           </View>
 
@@ -88,7 +109,7 @@ export default function ConfirmationModal({
                 styles.btn, 
                 styles.confirmBtn, 
                 pressed && styles.btnPressed,
-                { backgroundColor: isDanger ? colors.red : colors.primary }
+                { backgroundColor: confirmBgColor }
               ]} 
               onPress={onConfirm}
             >
